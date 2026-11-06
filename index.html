@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FlavorCraft - Recipe Finder & Kitchen Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Top Navigation / App Header -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand-group">
+        <div class="brand-icon">🍳</div>
+        <div>
+          <h1 class="brand-title">FlavorCraft</h1>
+          <p class="brand-subtitle">Recipe Finder & Kitchen Dashboard</p>
+        </div>
+      </div>
+
+      <div class="header-search-bar">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="globalSearchInput" placeholder="Search by recipe title, cuisine, or ingredients..." autocomplete="off">
+        <button id="clearSearchBtn" class="clear-search-btn" title="Clear search" style="display: none;">✕</button>
+      </div>
+
+      <div class="header-actions">
+        <button id="openGroceryBtn" class="btn btn-secondary">
+          <span class="btn-icon">🛒</span>
+          <span>Grocery List</span>
+          <span id="groceryBadge" class="action-count-badge" style="display: none;">0</span>
+        </button>
+        <button id="openNewRecipeBtn" class="btn btn-primary">
+          <span class="btn-icon">➕</span>
+          <span>Add Recipe</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Metrics / Quick Summary Bar -->
+  <section class="metrics-bar">
+    <div class="metrics-container">
+      <div class="metric-card">
+        <div class="metric-icon" style="background-color: #fff3e0; color: #e65100;">🍲</div>
+        <div class="metric-data">
+          <span id="metricTotalRecipes" class="metric-value">0</span>
+          <span class="metric-label">Total Recipes</span>
+        </div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-icon" style="background-color: #ffebee; color: #c62828;">❤️</div>
+        <div class="metric-data">
+          <span id="metricFavoriteRecipes" class="metric-value">0</span>
+          <span class="metric-label">Saved Favorites</span>
+        </div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-icon" style="background-color: #e8f5e9; color: #2e7d32;">🥬</div>
+        <div class="metric-data">
+          <span id="metricPantryMatches" class="metric-value">0</span>
+          <span class="metric-label">Pantry Match Ready</span>
+        </div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-icon" style="background-color: #e0f2fe; color: #0284c7;">⚡</div>
+        <div class="metric-data">
+          <span id="metricQuickMeals" class="metric-value">0</span>
+          <span class="metric-label">Under 30 Mins</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Content Layout (Sidebar + Main Recipe Explorer) -->
+  <main class="dashboard-main">
+    <div class="dashboard-layout">
+
+      <!-- Left Sidebar: Filters & Pantry Basket -->
+      <aside class="dashboard-sidebar">
+        <!-- Pantry / Ingredients In Stock Box -->
+        <div class="sidebar-box pantry-box">
+          <div class="sidebar-box-header">
+            <h3><span class="box-icon">🧺</span> My Pantry Basket</h3>
+            <button id="clearPantryBtn" class="link-btn" title="Clear all ingredients">Clear</button>
+          </div>
+          <p class="sidebar-hint">Add ingredients you have at home to see recipes you can make right away!</p>
+          
+          <div class="pantry-input-row">
+            <input type="text" id="pantryInput" placeholder="e.g. garlic, chicken, pasta..." autocomplete="off">
+            <button id="addPantryBtn" class="btn btn-sm btn-primary">Add</button>
+          </div>
+
+          <!-- Quick common ingredients tag clouds -->
+          <div class="quick-tags-container">
+            <span class="quick-tags-label">Quick add:</span>
+            <div class="quick-tag-pills" id="quickPantryPills">
+              <!-- Dynamically populated or static staples -->
+              <button type="button" class="quick-tag" data-ing="Egg">Eggs</button>
+              <button type="button" class="quick-tag" data-ing="Garlic">Garlic</button>
+              <button type="button" class="quick-tag" data-ing="Olive Oil">Olive Oil</button>
+              <button type="button" class="quick-tag" data-ing="Chicken">Chicken</button>
+              <button type="button" class="quick-tag" data-ing="Tomato">Tomato</button>
+              <button type="button" class="quick-tag" data-ing="Rice">Rice</button>
+              <button type="button" class="quick-tag" data-ing="Onion">Onion</button>
+              <button type="button" class="quick-tag" data-ing="Cheese">Cheese</button>
+            </div>
+          </div>
+
+          <!-- Active Pantry Ingredients List -->
+          <div id="pantryChips" class="pantry-chips-wrap">
+            <!-- Chips rendered here -->
+          </div>
+
+          <div class="pantry-match-toggle">
+            <label class="toggle-switch">
+              <input type="checkbox" id="matchOnlyPantryCheckbox">
+              <span class="toggle-slider"></span>
+            </label>
+            <span class="toggle-label">Only show recipes with &ge; 50% pantry match</span>
+          </div>
+        </div>
+
+        <!-- Filter Controls -->
+        <div class="sidebar-box filters-box">
+          <div class="sidebar-box-header">
+            <h3><span class="box-icon">⚙️</span> Filters</h3>
+            <button id="resetFiltersBtn" class="link-btn">Reset All</button>
+          </div>
+
+          <!-- Meal Type Filter -->
+          <div class="filter-group">
+            <label class="filter-group-title">Meal Category</label>
+            <div class="category-radio-group" id="categoryGroup">
+              <label class="radio-chip active">
+                <input type="radio" name="mealCategory" value="all" checked>
+                <span>All Meals</span>
+              </label>
+              <label class="radio-chip">
+                <input type="radio" name="mealCategory" value="Breakfast">
+                <span>Breakfast</span>
+              </label>
+              <label class="radio-chip">
+                <input type="radio" name="mealCategory" value="Lunch">
+                <span>Lunch</span>
+              </label>
+              <label class="radio-chip">
+                <input type="radio" name="mealCategory" value="Dinner">
+                <span>Dinner</span>
+              </label>
+              <label class="radio-chip">
+                <input type="radio" name="mealCategory" value="Dessert">
+                <span>Dessert</span>
+              </label>
+              <label class="radio-chip">
+                <input type="radio" name="mealCategory" value="Snack">
+                <span>Snack</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Max Cook Time Slider -->
+          <div class="filter-group">
+            <div class="filter-group-title-row">
+              <label class="filter-group-title" for="cookTimeRange">Max Cook Time</label>
+              <span id="cookTimeDisplay" class="filter-value-badge">Any time</span>
+            </div>
+            <input type="range" id="cookTimeRange" min="10" max="90" step="5" value="90">
+            <div class="range-labels">
+              <span>10m</span>
+              <span>30m</span>
+              <span>60m</span>
+              <span>Any</span>
+            </div>
+          </div>
+
+          <!-- Dietary Preferences -->
+          <div class="filter-group">
+            <label class="filter-group-title">Dietary Options</label>
+            <div class="checkbox-group" id="dietaryGroup">
+              <label class="checkbox-chip">
+                <input type="checkbox" value="Vegetarian">
+                <span>🌱 Vegetarian</span>
+              </label>
+              <label class="checkbox-chip">
+                <input type="checkbox" value="Vegan">
+                <span>🌿 Vegan</span>
+              </label>
+              <label class="checkbox-chip">
+                <input type="checkbox" value="Gluten-Free">
+                <span>🌾 Gluten-Free</span>
+              </label>
+              <label class="checkbox-chip">
+                <input type="checkbox" value="Low-Carb">
+                <span>🥑 Low-Carb</span>
+              </label>
+              <label class="checkbox-chip">
+                <input type="checkbox" value="Dairy-Free">
+                <span>🥛 Dairy-Free</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Difficulty -->
+          <div class="filter-group">
+            <label class="filter-group-title">Difficulty</label>
+            <select id="difficultySelect" class="styled-select">
+              <option value="all">Any Difficulty</option>
+              <option value="Easy">Easy (Beginner friendly)</option>
+              <option value="Medium">Medium (Intermediate)</option>
+              <option value="Hard">Hard (Chef level)</option>
+            </select>
+          </div>
+
+          <!-- Calories Max -->
+          <div class="filter-group">
+            <label class="filter-group-title">Max Calories</label>
+            <select id="calorieSelect" class="styled-select">
+              <option value="all">Any Calories</option>
+              <option value="400">Under 400 kcal</option>
+              <option value="600">Under 600 kcal</option>
+              <option value="800">Under 800 kcal</option>
+            </select>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main Recipe Area -->
+      <section class="dashboard-content">
+        <!-- Dashboard Content Header / View Tabs & Sorting -->
+        <div class="content-toolbar">
+          <div class="view-tabs" id="viewTabs">
+            <button class="view-tab active" data-tab="all">
+              All Recipes <span class="tab-count" id="tabCountAll">0</span>
+            </button>
+            <button class="view-tab" data-tab="favorites">
+              Favorites ❤️ <span class="tab-count" id="tabCountFavorites">0</span>
+            </button>
+            <button class="view-tab" data-tab="pantry">
+              Pantry Ready 🧺 <span class="tab-count" id="tabCountPantry">0</span>
+            </button>
+            <button class="view-tab" data-tab="custom">
+              My Creations ✍️ <span class="tab-count" id="tabCountCustom">0</span>
+            </button>
+          </div>
+
+          <div class="sorting-controls">
+            <label for="sortSelect">Sort by:</label>
+            <select id="sortSelect" class="styled-select sm-select">
+              <option value="match-desc">Pantry Match (% high to low)</option>
+              <option value="time-asc">Quickest Cook Time</option>
+              <option value="title-asc">Recipe Name (A-Z)</option>
+              <option value="calories-asc">Lowest Calories</option>
+              <option value="rating-desc">Highest Rated</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Active Filter Summary Bar -->
+        <div id="activeFilterTags" class="active-filter-tags" style="display: none;">
+          <!-- dynamically rendered chips like 'Search: pasta', 'Max Time: 30m', etc. -->
+        </div>
+
+        <!-- Recipe Cards Grid -->
+        <div id="recipeGrid" class="recipe-grid">
+          <!-- Dynamically filled with recipe cards -->
+        </div>
+
+        <!-- Empty State Message -->
+        <div id="emptyState" class="empty-state" style="display: none;">
+          <div class="empty-icon">🍳</div>
+          <h3 id="emptyTitle">No recipes matched your criteria</h3>
+          <p id="emptyDesc">Try clearing some filters, searching for something else, or adding items to your pantry basket.</p>
+          <button id="emptyResetBtn" class="btn btn-secondary">Reset Filters</button>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Recipe Details Modal -->
+  <div id="recipeDetailModal" class="modal-overlay" style="display: none;">
+    <div class="modal-container recipe-modal-box">
+      <button class="modal-close-btn" id="closeDetailModalBtn">&times;</button>
+      
+      <div class="recipe-modal-body" id="modalRecipeContent">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Create / Edit Recipe Modal -->
+  <div id="recipeFormModal" class="modal-overlay" style="display: none;">
+    <div class="modal-container form-modal-box">
+      <div class="modal-header">
+        <h2 id="formModalTitle">Add New Recipe</h2>
+        <button class="modal-close-btn" id="closeFormModalBtn">&times;</button>
+      </div>
+
+      <form id="recipeForm" class="recipe-form">
+        <input type="hidden" id="formRecipeId">
+        
+        <div class="form-row">
+          <div class="form-field flex-2">
+            <label for="formTitle">Recipe Title *</label>
+            <input type="text" id="formTitle" required placeholder="e.g. Creamy Tuscan Garlic Chicken">
+          </div>
+          <div class="form-field flex-1">
+            <label for="formCategory">Category *</label>
+            <select id="formCategory" required class="styled-select">
+              <option value="Breakfast">Breakfast</option>
+              <option value="Lunch">Lunch</option>
+              <option value="Dinner" selected>Dinner</option>
+              <option value="Dessert">Dessert</option>
+              <option value="Snack">Snack</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-field">
+            <label for="formPrepTime">Prep Time (mins) *</label>
+            <input type="number" id="formPrepTime" min="1" max="300" value="15" required>
+          </div>
+          <div class="form-field">
+            <label for="formCookTime">Cook Time (mins) *</label>
+            <input type="number" id="formCookTime" min="0" max="300" value="25" required>
+          </div>
+          <div class="form-field">
+            <label for="formServings">Servings *</label>
+            <input type="number" id="formServings" min="1" max="20" value="4" required>
+          </div>
+          <div class="form-field">
+            <label for="formDifficulty">Difficulty *</label>
+            <select id="formDifficulty" required class="styled-select">
+              <option value="Easy">Easy</option>
+              <option value="Medium" selected>Medium</option>
+              <option value="Hard">Hard</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-field flex-2">
+            <label for="formImageUrl">Image URL</label>
+            <input type="url" id="formImageUrl" placeholder="https://images.unsplash.com/... (optional)">
+          </div>
+          <div class="form-field flex-1">
+            <label for="formCalories">Calories (kcal)</label>
+            <input type="number" id="formCalories" min="50" max="3000" placeholder="e.g. 520">
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label for="formDescription">Short Summary</label>
+          <textarea id="formDescription" rows="2" placeholder="Brief description of flavors, texture, or occasion..."></textarea>
+        </div>
+
+        <div class="form-field">
+          <label>Dietary Badges</label>
+          <div class="form-checkbox-row">
+            <label><input type="checkbox" name="formDiet" value="Vegetarian"> Vegetarian</label>
+            <label><input type="checkbox" name="formDiet" value="Vegan"> Vegan</label>
+            <label><input type="checkbox" name="formDiet" value="Gluten-Free"> Gluten-Free</label>
+            <label><input type="checkbox" name="formDiet" value="Low-Carb"> Low-Carb</label>
+            <label><input type="checkbox" name="formDiet" value="Dairy-Free"> Dairy-Free</label>
+          </div>
+        </div>
+
+        <!-- Ingredients Builder -->
+        <div class="form-section">
+          <div class="form-section-header">
+            <h4>Ingredients</h4>
+            <button type="button" id="addIngredientRowBtn" class="btn btn-xs btn-secondary">+ Add Ingredient</button>
+          </div>
+          <p class="form-hint">Enter the ingredient amount, unit, and item name (e.g. "2 cloves Garlic").</p>
+          <div id="formIngredientsList" class="form-dynamic-list">
+            <!-- Dynamic rows -->
+          </div>
+        </div>
+
+        <!-- Instructions Builder -->
+        <div class="form-section">
+          <div class="form-section-header">
+            <h4>Preparation Steps</h4>
+            <button type="button" id="addInstructionRowBtn" class="btn btn-xs btn-secondary">+ Add Step</button>
+          </div>
+          <div id="formInstructionsList" class="form-dynamic-list">
+            <!-- Dynamic rows -->
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" id="cancelFormBtn" class="btn btn-secondary">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Recipe</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Grocery / Shopping List Modal -->
+  <div id="groceryModal" class="modal-overlay" style="display: none;">
+    <div class="modal-container grocery-modal-box">
+      <div class="modal-header">
+        <div class="grocery-header-title">
+          <h2>🛒 Kitchen Shopping List</h2>
+          <span id="groceryCountSummary" class="text-muted">0 items</span>
+        </div>
+        <button class="modal-close-btn" id="closeGroceryModalBtn">&times;</button>
+      </div>
+
+      <div class="grocery-add-bar">
+        <input type="text" id="groceryInput" placeholder="Add custom item (e.g., olive oil, almond milk)...">
+        <button id="addGroceryItemBtn" class="btn btn-primary">Add</button>
+      </div>
+
+      <div class="grocery-quick-actions">
+        <button id="clearCompletedGroceryBtn" class="btn btn-xs btn-secondary">Clear Checked</button>
+        <button id="copyGroceryBtn" class="btn btn-xs btn-secondary">📋 Copy List</button>
+        <button id="clearAllGroceryBtn" class="btn btn-xs link-btn-danger">Clear All</button>
+      </div>
+
+      <div id="groceryItemsContainer" class="grocery-items-container">
+        <!-- Rendered items -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Main JavaScript File -->
+  <script src="app.js"></script>
+</body>
+</html>
